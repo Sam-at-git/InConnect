@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+.env
+.env.local
+*.egg-info/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.uv-cache/
+
+# Node.js
+node_modules/
+*.log
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+postgres-data/
+redis-data/
+rabbitmq-data/
+es-data/
+minio-data/
+
+docs/
+CLAUDE.md
+
+# Ralph Loop history (可选)
+.ralph/
+
+# Claude Code
+.claude/
+
+# DevContainer
+.devcontainer/
+
+# Other hidden files
+.*
+!.gitignore
+!.env.example
