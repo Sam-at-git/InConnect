@@ -6,15 +6,23 @@ __pycache__/
 venv/
 .env
 .env.local
+.env.docker
+.env.*.local
 *.egg-info/
 .pytest_cache/
 .coverage
 .mypy_cache/
 .uv-cache/
+poetry.lock
 
 # Node.js
 node_modules/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 frontend/dist/
 frontend/build/
 frontend/.vite/
@@ -23,9 +31,18 @@ frontend/.vite/
 .idea/
 .vscode/
 *.swp
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Docker volumes
@@ -35,19 +52,40 @@ rabbitmq-data/
 es-data/
 minio-data/
 
+# Docs (internal documentation)
 docs/
-CLAUDE.md
 
-# Ralph Loop history (可选)
-.ralph/
+# Docker
+daemon.json
 
 # Claude Code
 .claude/
 
-# DevContainer
+# Ralph
+.ralph/
+
+# DevContainer (optional - comment out if you want to track it)
 .devcontainer/
 
-# Other hidden files
-.*
-!.gitignore
-!.env.example
+# Build artifacts
+*.tgz
+*.tar.gz
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
