@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 InConnect (迎客通) is a hotel customer experience platform with intelligent message routing and ticket management. It's a monorepo containing:
-- **Backend**: FastAPI (Python 3.11+) with async SQLAlchemy, PostgreSQL, Redis, RabbitMQ
+- **Backend**: FastAPI (Python 3.11+) with async SQLAlchemy, SQLite
 - **Frontend**: React 18 + TypeScript + Vite + Ant Design
 
 ## Development Commands
@@ -27,9 +27,10 @@ uv run alembic revision --autogenerate -m "msg"   # Create migration
 ### Frontend (from `/frontend`)
 ```bash
 npm install         # Install dependencies
-npm run dev         # Dev server (port 3000)
+npm run dev         # Dev server (port 3011)
 npm run build       # Production build (runs tsc first)
 npm run lint        # ESLint check
+npm run preview     # Preview production build
 ```
 
 ### Docker
@@ -58,14 +59,23 @@ core/         → Cross-cutting: auth, exceptions, security, logging, permission
 
 **Unified API Response**: All endpoints return `{code, message, data}` via `APIResponse` schema
 
-**Business Exceptions**: `BusinessException(code, message)` with subclasses (ValidationError, NotFoundError, PermissionDeniedError) - global handler converts to APIResponse
+**Business Exceptions**: `BusinessException(code, message)` with subclasses (ValidationError, NotFoundError, PermissionDeniedError, UnauthorizedError) - global handler converts to APIResponse
 
-**Error Codes**: TICKET_NOT_FOUND=2001, MESSAGE_SEND_FAILED=3001, etc. (see `core/exceptions.py`)
+**Error Codes** (see `core/exceptions.py`):
+- 1000-1999: Common errors (INVALID_PARAMS, NOT_FOUND, PERMISSION_DENIED, UNAUTHORIZED)
+- 2000-2999: Ticket errors (TICKET_NOT_FOUND, TICKET_STATUS_ERROR, TICKET_ASSIGNED)
+- 3000-3999: Message errors (MESSAGE_SEND_FAILED, MESSAGE_NOT_FOUND)
+- 4000-4999: Conversation errors
+- 5000-5999: Staff errors
+- 6000-6999: Hotel errors
 
 **Async Everything**: SQLAlchemy AsyncSession, async service methods, asyncio-compatible tests
 
 ### Frontend State Management (`frontend/src/stores/`)
 Zustand stores with localStorage persistence for: auth, ticket, report, template
+
+### Frontend API Client (`frontend/src/api/`)
+Axios-based client with request interceptor (adds Bearer token) and response interceptor (unwraps APIResponse). Service modules: auth, tickets, messages, staff, reports, rules, settings, batch
 
 ### Data Model Relationships
 ```
@@ -84,13 +94,8 @@ RoutingRule N:1 → Hotel
 
 | Service | Port | Description |
 |---------|------|-------------|
-| FastAPI | 8000 | Backend API |
-| React | 3000 | Admin frontend |
-| PostgreSQL | 5432 | Database |
-| Redis | 6379 | Cache |
-| RabbitMQ | 15672 | Queue management UI |
-| Elasticsearch | 9200 | Search |
-| MinIO | 9001 | Object storage UI |
+| FastAPI | 8000 | Backend API (docs at /docs) |
+| React | 3011 | Admin frontend |
 
 ## Testing
 

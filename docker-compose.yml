@@ -2,65 +2,6 @@
 # 迎客通 InConnect MVP - Development Environment
 
 services:
-  # PostgreSQL Database
-  db:
-    image: postgres:15-alpine
-    container_name: inconnect-db
-    environment:
-      POSTGRES_USER: inconnect
-      POSTGRES_PASSWORD: inconnect_dev_password
-      POSTGRES_DB: inconnect
-      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
-    ports:
-      - "15432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U inconnect"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - inconnect-network
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: inconnect-redis
-    ports:
-      - "16379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - inconnect-network
-
-  # RabbitMQ Message Queue
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    container_name: inconnect-rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-      RABBITMQ_DEFAULT_VHOST: /
-    ports:
-      - "5677:5672"
-      - "15673:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - inconnect-network
-
   # Backend API (FastAPI)
   backend:
     build:
@@ -71,28 +12,14 @@ services:
       APP_NAME: inconnect
       APP_ENV: development
       DEBUG: "true"
-      API_V1_PREFIX: /api/v1
-      HOST: 0.0.0.0
-      PORT: 8000
-      DATABASE_URL: postgresql+asyncpg://inconnect:inconnect_dev_password@db:5432/inconnect
-      REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      DATABASE_URL: sqlite+aiosqlite:///./data/inconnect.db
       SECRET_KEY: dev-secret-key-change-in-production
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 30
-      LOG_LEVEL: INFO
     ports:
       - "18000:8000"
     volumes:
       - ./backend:/app
+      - ./data:/app/data
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     networks:
       - inconnect-network
 
@@ -103,10 +30,9 @@ services:
       dockerfile: Dockerfile
     container_name: inconnect-frontend
     environment:
-      # Vite proxy target inside Docker network
       VITE_API_PROXY_TARGET: http://backend:8000
     ports:
-      - "13000:3000"
+      - "13011:3011"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -115,11 +41,6 @@ services:
       - backend
     networks:
       - inconnect-network
-
-volumes:
-  postgres_data:
-  redis_data:
-  rabbitmq_data:
 
 networks:
   inconnect-network:
