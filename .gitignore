@@ -45,7 +45,11 @@ frontend/.vite/
 ehthumbs.db
 Thumbs.db
 
-# Docker volumes
+# Data directories (SQLite database)
+data/
+backend/data/
+
+# Legacy Docker volumes (removed)
 postgres-data/
 redis-data/
 rabbitmq-data/
