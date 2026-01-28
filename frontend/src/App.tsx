@@ -1,6 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Layout, Typography, ConfigProvider, theme, Menu } from 'antd'
-import { useLocation } from 'react-router-dom'
 import {
   HomeOutlined,
   MessageOutlined,
@@ -9,7 +8,7 @@ import {
   SettingOutlined,
   ControlOutlined,
 } from '@ant-design/icons'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import LoginPage from './pages/Login'
 import TicketListPage from './pages/TicketList'
 import TicketDetailPage from './pages/TicketDetail'
@@ -27,6 +26,7 @@ const { Title } = Typography
 
 function App() {
   const location = useLocation()
+  const navigate = useNavigate()
   const isAuthenticated = !!localStorage.getItem('access_token')
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const [collapsed, setCollapsed] = useState(false)
@@ -42,6 +42,7 @@ function App() {
 
   const handleLogout = () => {
     clearAuth()
+    navigate('/login')
   }
 
   // Don't show layout for login page
@@ -67,104 +68,100 @@ function App() {
         },
       }}
     >
-      <BrowserRouter>
-        <Layout style={{ minHeight: '100vh' }}>
-          <Header style={{
-            background: '#001529',
-            padding: '0 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <Title level={3} style={{ color: '#fff', margin: 0 }}>
-              迎客通 InConnect
-            </Title>
-            {isAuthenticated && (
-              <a onClick={handleLogout} style={{ color: '#fff', cursor: 'pointer' }}>
-                退出登录
-              </a>
-            )}
-          </Header>
-          <Layout>
-            <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} width={200}>
-              <Menu
-                theme="dark"
-                mode="inline"
-                selectedKeys={[location.pathname]}
-                items={menuItems}
-                onClick={({ key }) => {
-                  if (key !== location.pathname) {
-                    window.location.href = key
-                  }
-                }}
+      <Layout style={{ minHeight: '100vh' }}>
+        <Header style={{
+          background: '#001529',
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <Title level={3} style={{ color: '#fff', margin: 0 }}>
+            迎客通 InConnect
+          </Title>
+          {isAuthenticated && (
+            <a onClick={handleLogout} style={{ color: '#fff', cursor: 'pointer' }}>
+              退出登录
+            </a>
+          )}
+        </Header>
+        <Layout>
+          <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} width={200}>
+            <Menu
+              theme="dark"
+              mode="inline"
+              selectedKeys={[location.pathname]}
+              items={menuItems}
+              onClick={({ key }) => {
+                navigate(key)
+              }}
+            />
+          </Sider>
+          <Content style={{ padding: '24px' }}>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/"
+                element={
+                  isAuthenticated ? <StaffDashboardPage /> : <Navigate to="/login" replace />
+                }
               />
-            </Sider>
-            <Content style={{ padding: '24px' }}>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                  path="/"
-                  element={
-                    isAuthenticated ? <StaffDashboardPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/tickets"
-                  element={
-                    isAuthenticated ? <TicketListPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/tickets/:id"
-                  element={
-                    isAuthenticated ? <TicketDetailPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/messages"
-                  element={
-                    isAuthenticated ? <ConversationListPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/messages/:id"
-                  element={
-                    isAuthenticated ? <MessageChatPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/messages/history"
-                  element={
-                    isAuthenticated ? <MessageHistoryPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/reports"
-                  element={
-                    isAuthenticated ? <ReportsPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    isAuthenticated ? <SettingsPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="/rules"
-                  element={
-                    isAuthenticated ? <RuleManagementPage /> : <Navigate to="/login" replace />
-                  }
-                />
-                <Route
-                  path="*"
-                  element={<Navigate to="/" replace />}
-                />
-              </Routes>
-            </Content>
-          </Layout>
+              <Route
+                path="/tickets"
+                element={
+                  isAuthenticated ? <TicketListPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="/tickets/:id"
+                element={
+                  isAuthenticated ? <TicketDetailPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="/messages"
+                element={
+                  isAuthenticated ? <ConversationListPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="/messages/:id"
+                element={
+                  isAuthenticated ? <MessageChatPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="/messages/history"
+                element={
+                  isAuthenticated ? <MessageHistoryPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  isAuthenticated ? <ReportsPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  isAuthenticated ? <SettingsPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="/rules"
+                element={
+                  isAuthenticated ? <RuleManagementPage /> : <Navigate to="/login" replace />
+                }
+              />
+              <Route
+                path="*"
+                element={<Navigate to="/" replace />}
+              />
+            </Routes>
+          </Content>
         </Layout>
-      </BrowserRouter>
+      </Layout>
     </ConfigProvider>
   )
 }

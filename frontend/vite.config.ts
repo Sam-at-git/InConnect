@@ -9,7 +9,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_BASE_URL || 'http://localhost:8000',
+        // In Docker: use service name 'backend', outside Docker: use localhost:18000
+        target: process.env.VITE_API_PROXY_TARGET || 'http://backend:8000',
         changeOrigin: true,
       },
     },

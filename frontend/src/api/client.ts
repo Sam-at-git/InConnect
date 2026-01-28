@@ -4,8 +4,6 @@
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-
 // API Response type
 interface APIResponse<T = unknown> {
   code: number
@@ -13,9 +11,9 @@ interface APIResponse<T = unknown> {
   data: T | null
 }
 
-// Create axios instance
+// Create axios instance - use relative URL, vite proxy handles routing
 const apiClient: AxiosInstance = axios.create({
-  baseURL: `${API_BASE_URL}/api/v1`,
+  baseURL: '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },

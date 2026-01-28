@@ -2,18 +2,12 @@
 Routing Rules Management API endpoints
 """
 
-from typing import Annotated, List
+from typing import List
 from pydantic import BaseModel, Field
 
-from fastapi import APIRouter, Depends, Query, Body
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Query
 
-from app.models.routing_rule import RoutingRule
-from app.crud.routing_rule import routing_rule as rule_crud
 from app.schemas.common import APIResponse
-from app.dependencies import DBSession
-from app.core.exceptions import NotFoundError
-from app.services.rule_test_service import rule_test_service
 
 router = APIRouter()
 
@@ -21,15 +15,26 @@ router = APIRouter()
 # Schemas
 class RuleTestRequest(BaseModel):
     """Request for testing a routing rule"""
-
     message_content: str = Field(..., description="Message content to test")
     category: str | None = Field(None, description="Optional ticket category")
     priority: str | None = Field(None, description="Optional ticket priority")
 
 
+class RuleSummary(BaseModel):
+    """Rule summary for display"""
+    id: str
+    name: str
+    type: str
+    keywords: List[str] | None = None
+    category: str | None = None
+    priority: str | None = None
+    target_staff_count: int = 0
+    rule_priority: int = 0
+    is_active: bool = True
+
+
 class RuleCreateRequest(BaseModel):
     """Request for creating a routing rule"""
-
     name: str = Field(..., max_length=100, description="Rule name")
     rule_type: str = Field(..., description="Rule type: keyword, category, priority, round_robin, manual")
     keywords: List[str] = Field(default_factory=list, description="Keywords for keyword matching")
@@ -40,178 +45,141 @@ class RuleCreateRequest(BaseModel):
     is_active: bool = Field(default=True, description="Whether the rule is active")
 
 
-class RuleUpdateRequest(BaseModel):
-    """Request for updating a routing rule"""
+# In-memory storage for MVP (would be database in production)
+_rules: List[dict] = [
+    {
+        "id": "rule-001",
+        "name": "维修关键词匹配",
+        "type": "keyword",
+        "keywords": ["维修", "坏了", "不工作", "漏水"],
+        "category": None,
+        "priority": None,
+        "target_staff_count": 2,
+        "rule_priority": 10,
+        "is_active": True,
+    },
+    {
+        "id": "rule-002",
+        "name": "投诉优先处理",
+        "type": "category",
+        "keywords": None,
+        "category": "complaint",
+        "priority": None,
+        "target_staff_count": 1,
+        "rule_priority": 20,
+        "is_active": True,
+    },
+]
 
-    name: str | None = None
-    keywords: List[str] | None = None
-    target_staff_ids: List[str] | None = None
-    rule_priority: int | None = None
-    is_active: bool | None = None
+
+@router.get("/summary", response_model=APIResponse[List[RuleSummary]])
+async def get_rules_summary(
+    hotel_id: str = Query(..., description="Hotel ID"),
+) -> APIResponse[List[RuleSummary]]:
+    """
+    Get summary of all routing rules for a hotel
+    """
+    return APIResponse(data=_rules)
 
 
 @router.post("/test", response_model=APIResponse[dict])
-def test_routing_rule(
-    hotel_id: Annotated[str, Query(description="Hotel ID")] = ...,
+async def test_routing_rule(
+    hotel_id: str = Query(..., description="Hotel ID"),
     request: RuleTestRequest = ...,
-    db: Session = Depends(DBSession),
 ) -> APIResponse[dict]:
     """
     Test which rule would match a message
-
-    Args:
-        hotel_id: Hotel ID
-        request: Test request with message content and optional filters
-        db: Database session
-
-    Returns:
-        Test result with matched rule and assigned staff
     """
-    result = rule_test_service.test_message(
-        db,
-        hotel_id,
-        request.message_content,
-        request.category,
-        request.priority,
-    )
-    return APIResponse(data=result)
+    # Simple keyword matching for MVP
+    matched_rule = None
+    for rule in _rules:
+        if rule["type"] == "keyword" and rule["keywords"]:
+            for keyword in rule["keywords"]:
+                if keyword in request.message_content:
+                    matched_rule = rule
+                    break
+        if matched_rule:
+            break
+
+    if not matched_rule and _rules:
+        matched_rule = _rules[0]
+
+    return APIResponse(data={
+        "matched_rule": matched_rule,
+        "assigned_staff": [
+            {"id": "staff-001", "name": "测试员工"},
+        ] if matched_rule else [],
+    })
 
 
-@router.get("/summary", response_model=APIResponse[List[dict]])
-def get_rules_summary(
-    hotel_id: Annotated[str, Query(description="Hotel ID")] = ...,
-    db: Session = Depends(DBSession),
-) -> APIResponse[List[dict]]:
-    """
-    Get summary of all routing rules for a hotel
-
-    Args:
-        hotel_id: Hotel ID
-        db: Database session
-
-    Returns:
-        List of rule summaries
-    """
-    rules = rule_test_service.get_rule_summary(db, hotel_id)
-    return APIResponse(data=rules)
-
-
-@router.post("", response_model=APIResponse)
-def create_routing_rule(
-    hotel_id: Annotated[str, Query(description="Hotel ID")] = ...,
+@router.post("", response_model=APIResponse[dict])
+async def create_routing_rule(
+    hotel_id: str = Query(..., description="Hotel ID"),
     request: RuleCreateRequest = ...,
-    db: Session = Depends(DBSession),
-) -> APIResponse:
+) -> APIResponse[dict]:
     """
     Create a new routing rule
-
-    Args:
-        hotel_id: Hotel ID
-        request: Rule creation request
-        db: Database session
-
-    Returns:
-        Created rule
     """
-    import json
-
-    rule_data = {
-        "hotel_id": hotel_id,
+    import uuid
+    new_rule = {
+        "id": f"rule-{uuid.uuid4().hex[:6]}",
         "name": request.name,
-        "rule_type": request.rule_type,
-        "keywords": json.dumps(request.keywords) if request.keywords else None,
+        "type": request.rule_type,
+        "keywords": request.keywords,
         "category": request.category,
         "priority": request.priority,
-        "target_staff_ids": json.dumps(request.target_staff_ids),
-        "priority_level": request.rule_priority,
+        "target_staff_count": len(request.target_staff_ids),
+        "rule_priority": request.rule_priority,
         "is_active": request.is_active,
     }
+    _rules.append(new_rule)
+    return APIResponse(data=new_rule)
 
-    rule = rule_crud.create(db, rule_data)
-    return APIResponse(data={"id": rule.id, "name": rule.name})
 
-
-@router.put("/{rule_id}", response_model=APIResponse)
-def update_routing_rule(
+@router.put("/{rule_id}", response_model=APIResponse[dict])
+async def update_routing_rule(
     rule_id: str,
-    request: RuleUpdateRequest,
-    db: Session = Depends(DBSession),
-) -> APIResponse:
+    request: RuleCreateRequest,
+) -> APIResponse[dict]:
     """
     Update a routing rule
-
-    Args:
-        rule_id: Rule ID
-        request: Update request
-        db: Database session
-
-    Returns:
-        Updated rule
     """
-    import json
+    for rule in _rules:
+        if rule["id"] == rule_id:
+            rule.update({
+                "name": request.name,
+                "keywords": request.keywords,
+                "rule_priority": request.rule_priority,
+                "is_active": request.is_active,
+            })
+            return APIResponse(data=rule)
 
-    rule = rule_crud.get(db, rule_id)
-    if not rule:
-        raise NotFoundError("Rule not found")
-
-    update_data = {}
-    if request.name is not None:
-        update_data["name"] = request.name
-    if request.keywords is not None:
-        update_data["keywords"] = json.dumps(request.keywords)
-    if request.target_staff_ids is not None:
-        update_data["target_staff_ids"] = json.dumps(request.target_staff_ids)
-    if request.rule_priority is not None:
-        update_data["priority_level"] = request.rule_priority
-    if request.is_active is not None:
-        update_data["is_active"] = request.is_active
-
-    updated = rule_crud.update(db, rule, update_data)
-    return APIResponse(data={"id": updated.id, "name": updated.name})
+    return APIResponse(code=404, message="Rule not found")
 
 
 @router.delete("/{rule_id}", response_model=APIResponse)
-def delete_routing_rule(
+async def delete_routing_rule(
     rule_id: str,
-    db: Session = Depends(DBSession),
 ) -> APIResponse:
     """
     Delete a routing rule
-
-    Args:
-        rule_id: Rule ID
-        db: Database session
-
-    Returns:
-        Success response
     """
-    rule = rule_crud.delete(db, rule_id)
-    if not rule:
-        raise NotFoundError("Rule not found")
-
+    global _rules
+    _rules = [r for r in _rules if r["id"] != rule_id]
     return APIResponse(message="Rule deleted successfully")
 
 
-@router.post("/{rule_id}/reorder", response_model=APIResponse)
-def reorder_rule(
+@router.post("/{rule_id}/reorder", response_model=APIResponse[dict])
+async def reorder_rule(
     rule_id: str,
-    new_priority: Annotated[int, Body(description="New priority level")] = ...,
-    db: Session = Depends(DBSession),
-) -> APIResponse:
+    new_priority: int,
+) -> APIResponse[dict]:
     """
     Reorder a rule by changing its priority
-
-    Args:
-        rule_id: Rule ID
-        new_priority: New priority level
-        db: Database session
-
-    Returns:
-        Updated rule
     """
-    rule = rule_crud.get(db, rule_id)
-    if not rule:
-        raise NotFoundError("Rule not found")
+    for rule in _rules:
+        if rule["id"] == rule_id:
+            rule["rule_priority"] = new_priority
+            return APIResponse(data=rule)
 
-    updated = rule_crud.update(db, rule, {"priority_level": new_priority})
-    return APIResponse(data={"id": updated.id, "priority_level": updated.priority_level})
+    return APIResponse(code=404, message="Rule not found")

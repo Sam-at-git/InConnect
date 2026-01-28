@@ -16,9 +16,9 @@ from app.core.exceptions import BusinessException
 from app.core.logging import setup_logging
 from app.core.performance import PerformanceMiddleware
 from app.schemas.common import APIResponse
-from app.api.v1 import health, auth, hotels, staff, tickets, webhook, messages, websocket, reports, batch
+from app.api.v1 import health, auth, hotels, staff, tickets, webhook, messages, websocket, reports, batch, rules
 from app.api.v1 import settings as settings_api
-# rules, permissions, audit - Temporarily disabled (missing dependencies)
+# permissions, audit - Temporarily disabled (missing dependencies)
 
 # Setup logging
 setup_logging()
@@ -208,7 +208,7 @@ app.include_router(websocket.router, tags=["websocket"])
 app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
 app.include_router(batch.router, prefix="/api/v1/batch", tags=["batch"])
 app.include_router(settings_api.router, prefix="/api/v1/settings", tags=["settings"])
-# app.include_router(rules.router, prefix="/api/v1/rules", tags=["rules"])
+app.include_router(rules.router, prefix="/api/v1/rules", tags=["rules"])
 # app.include_router(permissions.router, prefix="/api/v1/permissions", tags=["permissions"])
 # app.include_router(audit.router, prefix="/api/v1/audit", tags=["audit"])
 

@@ -26,7 +26,7 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  TestOutlined,
+  ExperimentOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
   PlayCircleOutlined,
@@ -301,7 +301,7 @@ export default function RuleManagementPage() {
           </Title>
           <Space>
             <Button
-              icon={<TestOutlined />}
+              icon={<ExperimentOutlined />}
               onClick={() => setTestDrawerVisible(true)}
             >
               规则测试

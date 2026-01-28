@@ -20,21 +20,18 @@ export interface LoginResponse {
 }
 
 export const authApi = {
-  // Login
-  login: async (data: LoginRequest) => {
-    const response = await apiClient.post<APIResponse<LoginResponse>>('/login', data)
-    return response.data
+  // Login - interceptor already unwraps response.data, so return directly
+  login: async (data: LoginRequest): Promise<APIResponse<LoginResponse>> => {
+    return apiClient.post('/login', data) as Promise<APIResponse<LoginResponse>>
   },
 
   // Logout
-  logout: async () => {
-    const response = await apiClient.post<APIResponse>('/logout')
-    return response.data
+  logout: async (): Promise<APIResponse> => {
+    return apiClient.post('/logout') as Promise<APIResponse>
   },
 
   // Refresh token
-  refreshToken: async () => {
-    const response = await apiClient.post<APIResponse<LoginResponse>>('/refresh')
-    return response.data
+  refreshToken: async (): Promise<APIResponse<LoginResponse>> => {
+    return apiClient.post('/refresh') as Promise<APIResponse<LoginResponse>>
   },
 }
