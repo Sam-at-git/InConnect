@@ -30,8 +30,8 @@ def upgrade() -> None:
         sa.Column("contact_phone", sa.String(20), nullable=True),
         sa.Column("contact_person", sa.String(50), nullable=True),
         sa.Column("status", sa.String(20), server_default="active"),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
+        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
     )
     op.create_index("ix_hotels_id", "hotels", ["id"])
 
@@ -48,8 +48,8 @@ def upgrade() -> None:
         sa.Column("department", sa.String(50), nullable=True),
         sa.Column("status", sa.String(20), server_default="active"),
         sa.Column("is_available", sa.Boolean(), server_default="true"),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
+        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
     )
     op.create_index("ix_staff_id", "staff", ["id"])
     op.create_index("ix_staff_hotel_id", "staff", ["hotel_id"])
@@ -66,8 +66,8 @@ def upgrade() -> None:
         sa.Column("guest_avatar", sa.Text(), nullable=True),
         sa.Column("status", sa.String(20), server_default="active"),
         sa.Column("last_message_at", sa.DateTime(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
+        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
     )
     op.create_index("ix_conversations_id", "conversations", ["id"])
     op.create_index("ix_conversations_hotel_id", "conversations", ["hotel_id"])
@@ -85,8 +85,8 @@ def upgrade() -> None:
         sa.Column("sender_id", sa.String(100), nullable=True),
         sa.Column("wechat_msg_id", sa.String(100), unique=True, nullable=True),
         sa.Column("is_read", sa.Boolean(), server_default="false"),
-        sa.Column("sent_at", sa.DateTime(), server_default=sa.text("now()")),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()")),
+        sa.Column("sent_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
         sa.ForeignKeyConstraint(["conversation_id"], ["conversations.id"], ondelete="CASCADE"),
     )
     op.create_index("ix_messages_id", "messages", ["id"])
@@ -107,8 +107,8 @@ def upgrade() -> None:
         sa.Column("due_at", sa.DateTime(), nullable=True),
         sa.Column("resolved_at", sa.DateTime(), nullable=True),
         sa.Column("closed_at", sa.DateTime(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
+        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
         sa.ForeignKeyConstraint(["conversation_id"], ["conversations.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["assigned_to"], ["staff.id"], ondelete="SET NULL"),
     )
@@ -130,8 +130,8 @@ def upgrade() -> None:
         sa.Column("target_staff_ids", sa.Text(), nullable=False),
         sa.Column("priority_level", sa.Integer(), server_default="0"),
         sa.Column("is_active", sa.Boolean(), server_default="true"),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
+        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
     )
     op.create_index("ix_routing_rules_id", "routing_rules", ["id"])
     op.create_index("ix_routing_rules_hotel_id", "routing_rules", ["hotel_id"])
@@ -146,7 +146,7 @@ def upgrade() -> None:
         sa.Column("old_value", sa.Text(), nullable=True),
         sa.Column("new_value", sa.Text(), nullable=True),
         sa.Column("comment", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP")),
         sa.ForeignKeyConstraint(["ticket_id"], ["tickets.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["staff_id"], ["staff.id"], ondelete="SET NULL"),
     )

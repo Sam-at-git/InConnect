@@ -5,7 +5,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
@@ -38,6 +38,9 @@ config.set_main_option("sqlalchemy.url", settings.database_url)
 # add your model's MetaData object here
 target_metadata = Base.metadata
 
+# Check if using SQLite
+is_sqlite = settings.database_url.startswith("sqlite")
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -57,6 +60,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        render_as_batch=is_sqlite,
     )
 
     with context.begin_transaction():
@@ -69,6 +73,7 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         compare_type=True,
+        render_as_batch=is_sqlite,
     )
 
     with context.begin_transaction():
@@ -77,14 +82,18 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in async mode"""
-    configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.database_url
-
-    connectable = async_engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    if is_sqlite:
+        from sqlalchemy.pool import StaticPool
+        connectable = create_async_engine(
+            settings.database_url,
+            poolclass=StaticPool,
+            connect_args={"check_same_thread": False},
+        )
+    else:
+        connectable = create_async_engine(
+            settings.database_url,
+            poolclass=pool.NullPool,
+        )
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

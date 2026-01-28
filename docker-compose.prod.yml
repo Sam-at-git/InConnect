@@ -1,91 +1,21 @@
 # Docker Compose for Production
-version: '3.8'
+# 迎客通 InConnect - Production Environment
 
 services:
-  # PostgreSQL database
-  db:
-    image: postgres:15-alpine
-    container_name: inconnect-db
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-inconnect}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
-      POSTGRES_DB: ${POSTGRES_DB:-inconnect}
-      POSTGRES_INITDB_ARGS: "-E UTF8"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inconnect}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - inconnect-network
-
-  # Redis cache
-  redis:
-    image: redis:7-alpine
-    container_name: inconnect-redis
-    restart: always
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-default_redis_password}
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    networks:
-      - inconnect-network
-
-  # RabbitMQ message queue
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    container_name: inconnect-rabbitmq
-    restart: always
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-      RABBITMQ_DEFAULT_VHOST: /
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - inconnect-network
-
   # Backend API
   backend:
     image: ghcr.io/${IMAGE_NAME:-your-org/inconnect-backend:latest}
     container_name: inconnect-backend
     restart: always
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     environment:
       - APP_ENV=production
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-inconnect}:${POSTGRES_PASSWORD:-change_me_in_production}@db:5432/${POSTGRES_DB:-inconnect}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-default_redis_password}@redis:6379/0
-      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672/
+      - DATABASE_URL=sqlite+aiosqlite:///./data/inconnect.db
       - SECRET_KEY=${SECRET_KEY:-change_me_in_production_please}
       - WECHAT_CORP_ID=${WECHAT_CORP_ID}
       - WECHAT_APP_SECRET=${WECHAT_APP_SECRET}
       - WECHAT_AGENT_ID=${WECHAT_AGENT_ID}
     volumes:
+      - ./data:/app/data
       - ./logs:/app/logs
     ports:
       - "8000:8000"
@@ -112,31 +42,6 @@ services:
       - ./ssl:/etc/nginx/ssl:ro
     networks:
       - inconnect-network
-
-  # Nginx reverse proxy (optional, for production)
-  nginx:
-    image: nginx:alpine
-    container_name: inconnect-nginx
-    restart: always
-    depends_on:
-      - backend
-      - frontend
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      - inconnect-network
-
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  rabbitmq_data:
-    driver: local
 
 networks:
   inconnect-network:

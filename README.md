@@ -27,56 +27,56 @@
 |------|------|
 | **后端** | Python 3.11+, FastAPI, SQLAlchemy 2.0 (async), Pydantic v2 |
 | **前端** | React 18, TypeScript, Vite, Ant Design |
-| **数据库** | PostgreSQL 15, Redis 7 |
-| **消息队列** | RabbitMQ 3.12, Celery |
-| **搜索** | Elasticsearch 8 |
-| **存储** | MinIO (S3 兼容) |
+| **数据库** | SQLite (开发/单机部署) |
 | **容器化** | Docker, Docker Compose |
 
 ## 快速开始
 
 ### 前置要求
 
-- Docker Desktop 4.0+
+- Python 3.11+ 和 [uv](https://github.com/astral-sh/uv)
+- Node.js 18+
 - Git
 
-### 方式一：Docker Compose（推荐）
-
-```bash
-# 克隆项目
-git clone <repository-url>
-cd InConnect
-
-# 启动所有服务
-docker-compose up -d
-
-# 访问服务
-# - 后端 API: http://localhost:8000
-# - 前端管理后台: http://localhost:3000
-# - API 文档: http://localhost:8000/docs
-```
-
-### 方式二：VS Code DevContainer
-
-1. 安装 VS Code + Dev Containers 扩展
-2. 打开项目，按 `F1` 选择 `Dev Containers: Reopen in Container`
-3. 等待容器构建完成
-
-### 方式三：本地开发
+### 方式一：本地开发（推荐）
 
 **后端：**
 ```bash
 cd backend
 uv sync                                           # 安装依赖
+mkdir -p data                                     # 创建数据目录
 uv run alembic upgrade head                       # 运行数据库迁移
-uv run uvicorn app.main:app --reload --port 8000  # 启动开发服务器
+SECRET_KEY=dev-secret uv run uvicorn app.main:app --reload --port 8000  # 启动开发服务器
 ```
 
 **前端：**
 ```bash
 cd frontend
 npm install       # 安装依赖
-npm run dev       # 启动开发服务器 (端口 3000)
+npm run dev       # 启动开发服务器 (端口 3011)
+```
+
+**访问服务：**
+- 后端 API: http://localhost:8000
+- API 文档: http://localhost:8000/docs
+- 前端管理后台: http://localhost:3011
+
+### 方式二：Docker Compose
+
+```bash
+# 克隆项目
+git clone <repository-url>
+cd InConnect
+
+# 创建数据目录
+mkdir -p data
+
+# 启动所有服务
+docker-compose up -d
+
+# 访问服务
+# - 后端 API: http://localhost:18000
+# - 前端管理后台: http://localhost:13011
 ```
 
 ## 项目结构
@@ -100,8 +100,7 @@ InConnect/
 │       ├── pages/          # 页面组件
 │       ├── components/     # 通用组件
 │       └── stores/         # Zustand 状态管理
-├── docs/                   # 项目文档
-├── .devcontainer/          # VS Code DevContainer 配置
+├── data/                   # SQLite 数据库文件目录
 └── docker-compose.yml      # Docker 编排配置
 ```
 
@@ -131,32 +130,15 @@ npm run preview  # 预览生产构建
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | FastAPI | 8000 | 后端 API |
-| React | 3000 | 管理后台前端 |
-| PostgreSQL | 5432 | 主数据库 |
-| Redis | 6379 | 缓存 |
-| RabbitMQ | 15672 | 消息队列管理界面 |
-| Elasticsearch | 9200 | 搜索引擎 |
-| MinIO | 9001 | 对象存储管理界面 |
-
-## 文档
-
-- [技术方案](docs/迎客通InConnect平台技术方案.md)
-- [API 设计](docs/API设计.md)
-- [数据库设计](docs/数据库设计.md)
-- [开发环境配置](docs/开发环境配置指南.md)
-- [部署指南](docs/部署指南.md)
-- [测试计划](docs/测试计划.md)
+| React | 3011 | 管理后台前端 |
 
 ## 环境变量
 
 复制 `.env.example` 为 `.env` 并配置：
 
 ```bash
-# 数据库
-DATABASE_URL=postgresql://inconnect:password@db:5432/inconnect
-
-# Redis
-REDIS_URL=redis://redis:6379/0
+# 数据库 (SQLite)
+DATABASE_URL=sqlite+aiosqlite:///./data/inconnect.db
 
 # JWT
 SECRET_KEY=your-secret-key

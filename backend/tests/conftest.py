@@ -3,13 +3,11 @@ Pytest configuration and fixtures
 """
 
 import pytest
-import asyncio
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
-from app.config import get_settings
 from app.models import (
     Hotel,
     Staff,
@@ -20,15 +18,15 @@ from app.models import (
 )
 
 
-# Test database URL
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/inconnect_test"
+# Test database URL (SQLite in-memory)
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
-# Test engine
+# Test engine with SQLite configuration
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
     poolclass=StaticPool,
-    connect_args={"server_settings": {"timezone": "UTC"}},
+    connect_args={"check_same_thread": False},
 )
 
 TestSessionLocal = async_sessionmaker(
@@ -48,7 +46,6 @@ async def setup_database():
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-
 
     await test_engine.dispose()
 
@@ -78,30 +75,6 @@ async def client(db_session: AsyncSession) -> AsyncGenerator:
         yield test_client
 
     app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def sync_db():
-    """Create synchronous test database session"""
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    sync_engine = create_engine(
-        "postgresql://postgres:postgres@localhost:5432/inconnect_test",
-        poolclass=StaticPool,
-    )
-
-    Base.metadata.create_all(sync_engine)
-
-    TestingSessionLocal = sessionmaker(bind=sync_engine)
-
-    db = TestingSessionLocal()
-
-    yield db
-
-    db.close()
-    Base.metadata.drop_all(sync_engine)
-    sync_engine.dispose()
 
 
 # Test data fixtures

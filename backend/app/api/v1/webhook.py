@@ -237,7 +237,7 @@ async def _handle_media_message(
         )
         conv = await conversation_crud.create(db, conv_data)
 
-    # In production, download media from WeChat and store in MinIO/S3
+    # In production, download media from WeChat and store in object storage
     media_url = f"wechat://{media_type}/{media_id}"
 
     await message_crud.create_message(
